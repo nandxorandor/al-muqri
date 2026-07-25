@@ -6,8 +6,7 @@
      github.com and DRAG-AND-DROP the mp4 here (auto-hosts + inline player, ≤10 MB).
      Or commit it to docs/demo.mp4 and keep the raw URL line below. -->
 
-https://github.com/nandxorandor/al-muqri/raw/main/docs/demo.mp4
-
+https://www.youtube.com/watch?v=qnHhzcH6kX8
 ---
 
 <div dir="rtl">
