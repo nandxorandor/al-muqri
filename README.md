@@ -6,10 +6,7 @@
      github.com and DRAG-AND-DROP the mp4 here (auto-hosts + inline player, ≤10 MB).
      Or commit it to docs/demo.mp4 and keep the raw URL line below. -->
 
-[![تطبيق معلم القرآن](https://youtube.com)](https://www.youtube.com/watch?v=qnHhzcH6kX8)---
-
-<div dir="rtl">
-
+https://www.youtube.com/watch?v=qnHhzcH6kX8
 ## 🇸🇦 بالعربية
 
 تطبيق ويب يعمل محليًا يساعدك على **تلاوة القرآن الكريم مع تصحيح فوري على مستوى
