@@ -1,0 +1,26 @@
+# ── Quran Teacher · Python dependencies ───────────────────────
+# Target: Python 3.11  (a conda environment is recommended)
+#   conda create -n quran_teacher python=3.11
+#   conda activate quran_teacher
+#   pip install -r requirements.txt
+#
+# Versions below are the ones this project is verified against.
+
+# Web app + audio handling
+Flask==3.1.3
+requests==2.34.2
+numpy==2.4.6
+cryptography==49.0.0          # self-signed HTTPS for LAN sharing (HTTPS=1)
+
+# Quran text, ayah data, and phonetic transcription
+quran-transcript==0.5.2
+
+# Pronunciation engine (quran-muaalem-engine).
+# NOTE: this pulls in PyTorch + LitServe — a large (multi-GB) download, and it
+# fetches its model weights from Hugging Face on first run.
+quran-muaalem==0.1.0
+
+# PyTorch is installed as a dependency of quran-muaalem. For a specific
+# CPU-only or CUDA build, install torch first from https://pytorch.org
+# e.g.  pip install torch --index-url https://download.pytorch.org/whl/cpu
+# torch==2.13.0

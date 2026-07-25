@@ -1,0 +1,1366 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>المقرئ · Al‑Muqri’</title>
+<link href="https://fonts.googleapis.com/css2?family=Amiri+Quran&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  /* Official KFGQPC Uthmanic HAFS (Madinah mushaf) — bundled locally so the
+     verses render even with no internet. */
+  @font-face{
+    font-family:'UthmanicHafs';
+    src:url('/fonts/uthmanic_hafs.woff2?v=2') format('woff2'),
+        url('/fonts/uthmanic_hafs.otf?v=2') format('opentype');
+    font-display:swap;
+  }
+  :root{
+    --bg:#0d1310; --panel:#141c17; --panel2:#1a241e; --line:#26332c;
+    --ink:#e9efe9; --muted:#8ba095; --gold:#c9a227;
+    --ok:#3fa96a; --bad:#d9534f;
+    --vs:1;   /* verse text scale, driven by the A- / A+ buttons */
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font-family:'Amiri',Georgia,serif;min-height:100vh}
+  header{padding:13px 20px;border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg,#18211c,#121a15);
+    display:flex;align-items:center;gap:11px;flex-wrap:wrap;
+    position:sticky;top:0;z-index:20}
+  h1{margin:0;font-size:20px}
+  h1 span{color:var(--gold)}
+  .spacer{flex:1}
+  select,button{font-family:system-ui,sans-serif;font-size:13.5px;
+    border-radius:9px;border:1px solid var(--line);
+    background:var(--panel2);color:var(--ink);padding:9px 14px;cursor:pointer}
+  button:hover:not(:disabled){border-color:var(--gold)}
+  button:disabled{opacity:.4;cursor:not-allowed}
+  .go{background:var(--gold);color:#191307;border-color:var(--gold);
+      font-weight:700;font-size:14.5px;padding:11px 24px}
+  .go.live{background:var(--bad);border-color:var(--bad);color:#fff}
+  .pulse{animation:pu 1.1s ease-in-out infinite}
+  /* Segmented control: two always-visible, mutually-exclusive options. */
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;
+    overflow:hidden}
+  .seg button{border:none;border-radius:0;padding:9px 13px;font-size:13px}
+  .seg button+button{border-right:1px solid var(--line)}
+  .seg button.on{background:var(--gold);color:#191307;font-weight:700}
+  .seg button:not(.on){color:var(--muted)}
+  @keyframes pu{0%,100%{opacity:1}50%{opacity:.5}}
+  .badge{font-family:system-ui,sans-serif;font-size:12px;color:var(--muted);
+    padding:6px 11px;border:1px solid var(--line);border-radius:99px;
+    white-space:nowrap}
+  .badge.live{color:var(--ok);border-color:var(--ok)}
+  .badge.err{color:var(--bad);border-color:var(--bad)}
+  .meter{width:64px;height:5px;background:var(--panel2);border-radius:99px;
+    overflow:hidden;border:1px solid var(--line)}
+  .meter i{display:block;height:100%;width:0;background:var(--ok);
+    transition:width .1s}
+
+  .wrap{max-width:980px;margin:0 auto;padding:20px 20px 60px;position:relative}
+  /* Round text-size controls PINNED just outside the parchment's top-right
+     corner. right:calc(50% - 548px) keeps them beside the centred page (not the
+     screen edge); top is set to sit below the header (refined in JS). */
+  .sizer{position:fixed;top:80px;right:calc(50% - 548px);
+    display:flex;flex-direction:column;gap:14px;z-index:50}
+  .sizer button{width:44px;height:44px;border-radius:50%;padding:0;
+    font-size:26px;font-weight:700;line-height:1;display:flex;
+    align-items:center;justify-content:center;
+    background:#18c3d6;border:2px solid #5ff0ff;color:#04222a;
+    box-shadow:0 0 14px rgba(38,214,236,.55);transition:transform .1s}
+  .sizer button:hover{background:#26d6ec;box-shadow:0 0 20px rgba(38,214,236,.9)}
+  .sizer button:active{transform:scale(.92)}
+  /* Parchment page, like a printed mushaf. */
+  .mushaf{background:#fbf8ef;border:1px solid #e3d9c0;color:#181613;
+    border-radius:14px;padding:28px 32px;
+    box-shadow:inset 0 0 60px rgba(120,95,40,.06),0 2px 14px rgba(0,0,0,.35)}
+  .ayah{font-family:'Amiri Quran','Amiri',serif;
+    font-size:calc(29px * var(--vs));
+    line-height:2.5;text-align:center;padding:5px 0}
+  /* Continuous, edge-to-edge justified text — the mushaf look. */
+  .ayah-flow{font-family:'Amiri Quran','Amiri',serif;
+    font-size:calc(30px * var(--vs));line-height:2.6;
+    text-align:justify;text-justify:inter-word;direction:rtl;padding:4px 0}
+  .ayah.basmalah{color:#9a7511;padding-bottom:16px}
+  /* Simple tashkeel colouring — uniform, not full tajwīd. */
+  .hk{color:#b23a2e}
+  /* When a word is highlighted by its state, the marks follow that colour. */
+  .w.good .hk,.w.bad .hk,.w.sel .hk,.w.target .hk,
+  .w.retry .hk,.w.retry-ok .hk,.w.sel-live .hk,
+  .ayah.basmalah .hk{color:inherit}
+  .w{padding:2px 5px;border-radius:6px;transition:background .3s,color .3s}
+  .w.good{color:var(--ok);background:rgba(63,169,106,.12)}
+  .w.bad{color:var(--bad);background:rgba(217,83,79,.2);
+    box-shadow:0 0 0 1px var(--bad);cursor:pointer}
+  .w.bad:hover{background:rgba(217,83,79,.34)}
+  .w.retry{background:rgba(201,162,39,.3);box-shadow:0 0 0 2px var(--gold);
+    color:var(--gold)}
+  .w.target{background:rgba(201,162,39,.34);box-shadow:0 0 0 2px var(--gold);
+    color:var(--gold)}
+  .w.sel{background:rgba(93,160,255,.3);box-shadow:0 0 0 2px #3a78d8;
+    color:#123a72}
+  /* Blue frame kept on EVERY word of the pick — green, red, or pending — so
+     the whole selection still reads as one group. outline sits outside the
+     box, so it coexists with the good/bad fills. */
+  .w.insel{outline:2px solid #3a78d8;outline-offset:2px;border-radius:6px}
+  .w.insel.bad{box-shadow:none}   /* drop the red ring; blue frame is enough */
+  .link{
+    display:inline-block;width:0;height:0;cursor:pointer;
+    vertical-align:middle;margin:0 1px;user-select:none;
+    border-top:9px solid transparent;border-bottom:9px solid transparent;
+    animation:fadein .2s ease;position:relative;top:-2px;
+  }
+  /* sits just left of the previous word and points RIGHT at it (RTL) */
+  .link.to-prev{border-left:11px solid var(--bad)}
+  /* sits just right of the next word and points LEFT at it (RTL) */
+  .link.to-next{border-right:11px solid var(--bad)}
+  .link:hover{filter:brightness(1.4)}
+  .link.to-prev:hover{border-left-color:#ff7b76}
+  .link.to-next:hover{border-right-color:#ff7b76}
+  @keyframes fadein{from{opacity:0}to{opacity:1}}
+  .w.sel-live{background:rgba(201,162,39,.4);box-shadow:0 0 0 2px var(--gold);
+    color:var(--gold)}
+  .mushaf{user-select:none;-webkit-user-select:none}
+  .selbar{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+    background:var(--panel2);border:1px solid var(--gold);border-radius:14px;
+    padding:12px 18px;z-index:60;display:none;align-items:center;gap:14px;
+    flex-wrap:wrap;justify-content:center;max-width:92vw;
+    box-shadow:0 8px 30px rgba(0,0,0,.6)}
+  .selbar.show{display:flex}
+  .selbar .txt{font-family:'Amiri Quran','Amiri',serif;font-size:23px;
+    color:var(--gold);max-width:min(72vw,620px);overflow:hidden;
+    text-overflow:ellipsis;white-space:nowrap;direction:rtl}
+  .selbar .hint{font-family:system-ui,sans-serif;font-size:12px;
+    color:var(--muted);white-space:nowrap}
+  .selbar .hint.big{font-size:15px;color:var(--ink)}
+  /* Reference-audio availability now lives in the header, shown only while a
+     selection is active. */
+  .audio-status{font-family:system-ui,sans-serif;font-size:12px;
+    color:var(--ok);padding:6px 11px;border:1px solid var(--ok);
+    border-radius:99px;white-space:nowrap}
+  .audio-status:empty{display:none}
+  .audio-status.need-net{color:var(--bad);border-color:var(--bad)}
+  .selbar .dot{width:10px;height:10px;border-radius:50%;
+    background:var(--muted);flex:none}
+  .selbar .dot.live{background:var(--bad);animation:pu 1s ease-in-out infinite}
+  .selbar .dot.ok{background:var(--ok);animation:none}
+  .selbar .dot.think{background:var(--gold);animation:pu .7s ease-in-out infinite}
+  .selbar .tries{font-family:system-ui,sans-serif;font-size:11px;
+    color:var(--gold);white-space:nowrap}
+  .selbar button{white-space:nowrap}
+  /* Play/pause floats next to the chosen word(s) so it no longer crowds
+     the instruction line inside the bar. */
+  .playfab{position:fixed;z-index:61;display:none;white-space:nowrap;
+    background:var(--panel2);border:1px solid var(--gold);color:var(--gold);
+    border-radius:99px;padding:8px 15px;font-family:system-ui,sans-serif;
+    font-size:13px;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.55);
+    transition:top .12s,left .12s}
+  .playfab.show{display:block}
+  .playfab:hover:not(:disabled){background:rgba(201,162,39,.2)}
+  .playfab:disabled{opacity:.5;cursor:default}
+  .w.retry-ok{background:rgba(63,169,106,.3);box-shadow:0 0 0 2px var(--ok);
+    color:var(--ok)}
+  .tip{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);
+    background:var(--panel2);border:1px solid var(--gold);color:var(--ink);
+    padding:11px 20px;border-radius:99px;font-family:system-ui,sans-serif;
+    font-size:13px;z-index:60;display:none;box-shadow:0 6px 24px rgba(0,0,0,.5)}
+  .tip.show{display:block}
+  .tip b{color:var(--gold)}
+  .num{color:#14532d;font-size:calc(23px * var(--vs));opacity:1;margin:0 6px}
+
+  .setup{background:var(--panel);border:1px solid var(--bad);
+    border-radius:12px;padding:18px 20px;margin-bottom:16px;
+    font-family:system-ui,sans-serif;font-size:13px;line-height:1.9;
+    display:none}
+  .setup.show{display:block}
+  .setup code{background:var(--panel2);padding:2px 7px;border-radius:5px;
+    color:var(--gold);font-size:12.5px}
+
+  .side{position:fixed;left:0;top:0;bottom:0;width:300px;
+    background:var(--panel);border-left:1px solid var(--line);
+    padding:18px;overflow-y:auto;transform:translateX(-100%);
+    transition:transform .25s;z-index:30}
+  .side.open{transform:none}
+  .side h3{margin:0 0 12px;font-family:system-ui,sans-serif;font-size:11.5px;
+    color:var(--muted);text-transform:uppercase;letter-spacing:1.2px}
+  .err{background:var(--panel2);border-right:3px solid var(--bad);
+    border-radius:8px;padding:11px 12px;margin-bottom:8px}
+  .err .rule{font-family:system-ui,sans-serif;font-size:11px;
+    color:var(--gold);margin-bottom:5px}
+  .err .ph{font-family:'Amiri',serif;font-size:19px;line-height:1.7}
+  .err .ph i{color:var(--ok);font-style:normal}
+  .err .ph b{color:var(--bad)}
+  .err .reason{font-family:system-ui,sans-serif;font-size:12.5px;
+    color:var(--ink);line-height:1.6}
+  .err .meta{font-family:system-ui,sans-serif;font-size:10.5px;
+    color:var(--muted);margin-top:5px}
+  .empty{color:var(--muted);font-family:system-ui,sans-serif;font-size:13px}
+  .stat{display:flex;gap:18px;margin-bottom:16px}
+  .stat b{display:block;font-size:24px;color:var(--gold);
+    font-family:system-ui,sans-serif}
+  .stat span{font-size:11px;color:var(--muted);font-family:system-ui,sans-serif}
+  .note{font-family:system-ui,sans-serif;font-size:11.5px;color:var(--muted);
+    background:var(--panel2);border-right:3px solid var(--gold);
+    padding:10px 12px;border-radius:6px;margin-top:16px;line-height:1.75}
+  .loading{text-align:center;padding:50px 20px;color:var(--muted);
+    font-family:system-ui,sans-serif}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>ال<span>مقرئ</span> · Al‑Muqri’</h1>
+  <select id="sura"></select>
+  <button id="prevPg">‹</button>
+  <select id="pageSel"></select>
+  <button id="nextPg">›</button>
+  <button class="go" id="rec">● ابدأ · Start</button>
+  <button id="clr">مسح · Clear</button>
+  <span class="seg" id="listen" title="نمط الاستماع للتلاوة المرجعية">
+    <button id="segTaj">تجويد · Tajweed</button>
+    <button id="segNorm">قراءة عادية · Normal Reading</button>
+  </span>
+  <button id="panel">الأخطاء · Mistakes ◂</button>
+  <div class="spacer"></div>
+  <span class="audio-status" id="selAudioStatus"></span>
+  <div class="meter"><i id="lvl"></i></div>
+  <div class="badge" id="st">…</div>
+</header>
+
+<div class="side open" id="side">
+  <div class="stat">
+    <div><b id="sOk">0</b><span>صحيح · Correct</span></div>
+    <div><b id="sBad">0</b><span>أخطاء · Mistakes</span></div>
+  </div>
+  <h3>الأخطاء · Mistakes</h3>
+  <div id="errs"><div class="empty">لا شيء بعد</div></div>
+  <div class="note">
+    التحليل بالرسم الصوتي القرآني: الحركات والمدود وصفات الحروف.<br><br>
+    Phoneme-level analysis via the Quran Phonetic Script — vowels, madd
+    length as repeated symbols, and articulation attributes. Powered by
+    <b>quran-muaalem</b> (arXiv:2509.00094).
+  </div>
+</div>
+
+<div class="tip" id="tip"></div>
+
+
+
+<button class="playfab" id="selPlay" title="استمع · Listen">▶ استمع · Listen</button>
+
+<div class="selbar" id="selbar">
+  <span class="dot" id="selDot"></span>
+  <span class="txt" id="selTxt"></span>
+  <span class="hint" id="selHint">انطقها… · say it</span>
+  <button id="selClr">إنهاء · Done</button>
+</div>
+
+<!-- Status box for the standard (live) reading mode, mirroring the selbar. -->
+<div class="selbar" id="livebar">
+  <span class="dot live" id="liveDot"></span>
+  <div class="meter"><i id="liveLvl"></i></div>
+  <span class="hint big" id="liveHint">يستمع… · listening</span>
+  <button id="liveStop">إيقاف · Stop</button>
+</div>
+
+<div class="wrap">
+  <div class="sizer">
+    <button id="szPlus" title="تكبير الخط · Larger" aria-label="Larger">+</button>
+    <button id="szMinus" title="تصغير الخط · Smaller" aria-label="Smaller">−</button>
+  </div>
+  <div class="setup" id="setup"></div>
+  <div class="mushaf" id="page">
+    <div class="loading">جارٍ التحميل…</div>
+  </div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const S={page:null,stream:null,ctx:null,node:null,buf:[],
+         live:false,busy:false,lastSend:0,queued:0};
+
+// Chunking is driven by SILENCE, not a timer.
+//
+// Cutting every N seconds sliced words in half, and the engine then reported
+// the broken edges as pronunciation errors -- which is why correct recitation
+// came back covered in red. Their model was trained on waqf-segmented audio,
+// and a reciter naturally pauses at waqf, so cutting on silence gives the
+// model exactly the shape it expects.
+const SIL_RMS     = 0.012;   // below this counts as silence
+const SIL_HOLD_MS = 500;     // silence this long ends a phrase
+const MIN_PHRASE_S= 1.6;     // ignore anything shorter
+const MAX_PHRASE_S= 13.0;    // force a cut if someone never pauses
+const PRE_ROLL_S  = 0.25;    // keep a little audio before speech starts
+
+// ---------- surah list ----------
+// All 114 suras (names from the quran_transcript dataset).
+const SURAS={1:'الفاتحة',2:'البقرة',3:'آل عمران',4:'النساء',5:'المائدة',
+  6:'الأنعام',7:'الأعراف',8:'الأنفال',9:'التوبة',10:'يونس',11:'هود',
+  12:'يوسف',13:'الرعد',14:'ابراهيم',15:'الحجر',16:'النحل',17:'الإسراء',
+  18:'الكهف',19:'مريم',20:'طه',21:'الأنبياء',22:'الحج',23:'المؤمنون',
+  24:'النور',25:'الفرقان',26:'الشعراء',27:'النمل',28:'القصص',29:'العنكبوت',
+  30:'الروم',31:'لقمان',32:'السجدة',33:'الأحزاب',34:'سبإ',35:'فاطر',36:'يس',
+  37:'الصافات',38:'ص',39:'الزمر',40:'غافر',41:'فصلت',42:'الشورى',43:'الزخرف',
+  44:'الدخان',45:'الجاثية',46:'الأحقاف',47:'محمد',48:'الفتح',49:'الحجرات',
+  50:'ق',51:'الذاريات',52:'الطور',53:'النجم',54:'القمر',55:'الرحمن',
+  56:'الواقعة',57:'الحديد',58:'المجادلة',59:'الحشر',60:'الممتحنة',61:'الصف',
+  62:'الجمعة',63:'المنافقون',64:'التغابن',65:'الطلاق',66:'التحريم',67:'الملك',
+  68:'القلم',69:'الحاقة',70:'المعارج',71:'نوح',72:'الجن',73:'المزمل',
+  74:'المدثر',75:'القيامة',76:'الانسان',77:'المرسلات',78:'النبإ',79:'النازعات',
+  80:'عبس',81:'التكوير',82:'الإنفطار',83:'المطففين',84:'الإنشقاق',85:'البروج',
+  86:'الطارق',87:'الأعلى',88:'الغاشية',89:'الفجر',90:'البلد',91:'الشمس',
+  92:'الليل',93:'الضحى',94:'الشرح',95:'التين',96:'العلق',97:'القدر',
+  98:'البينة',99:'الزلزلة',100:'العاديات',101:'القارعة',102:'التكاثر',
+  103:'العصر',104:'الهمزة',105:'الفيل',106:'قريش',107:'الماعون',108:'الكوثر',
+  109:'الكافرون',110:'النصر',111:'المسد',112:'الإخلاص',113:'الفلق',
+  114:'الناس'};
+
+// English (transliterated) names, matched by sura number.
+const SURAS_EN={1:"Al-Fatihah",2:"Al-Baqarah",3:"Aal-E-Imran",4:"An-Nisa",
+  5:"Al-Ma'idah",6:"Al-An'am",7:"Al-A'raf",8:"Al-Anfal",9:"At-Tawbah",
+  10:"Yunus",11:"Hud",12:"Yusuf",13:"Ar-Ra'd",14:"Ibrahim",15:"Al-Hijr",
+  16:"An-Nahl",17:"Al-Isra",18:"Al-Kahf",19:"Maryam",20:"Ta-Ha",
+  21:"Al-Anbiya",22:"Al-Hajj",23:"Al-Mu'minun",24:"An-Nur",25:"Al-Furqan",
+  26:"Ash-Shu'ara",27:"An-Naml",28:"Al-Qasas",29:"Al-Ankabut",30:"Ar-Rum",
+  31:"Luqman",32:"As-Sajdah",33:"Al-Ahzab",34:"Saba",35:"Fatir",36:"Ya-Sin",
+  37:"As-Saffat",38:"Sad",39:"Az-Zumar",40:"Ghafir",41:"Fussilat",
+  42:"Ash-Shura",43:"Az-Zukhruf",44:"Ad-Dukhan",45:"Al-Jathiyah",
+  46:"Al-Ahqaf",47:"Muhammad",48:"Al-Fath",49:"Al-Hujurat",50:"Qaf",
+  51:"Adh-Dhariyat",52:"At-Tur",53:"An-Najm",54:"Al-Qamar",55:"Ar-Rahman",
+  56:"Al-Waqi'ah",57:"Al-Hadid",58:"Al-Mujadila",59:"Al-Hashr",
+  60:"Al-Mumtahanah",61:"As-Saff",62:"Al-Jumu'ah",63:"Al-Munafiqun",
+  64:"At-Taghabun",65:"At-Talaq",66:"At-Tahrim",67:"Al-Mulk",68:"Al-Qalam",
+  69:"Al-Haqqah",70:"Al-Ma'arij",71:"Nuh",72:"Al-Jinn",73:"Al-Muzzammil",
+  74:"Al-Muddaththir",75:"Al-Qiyamah",76:"Al-Insan",77:"Al-Mursalat",
+  78:"An-Naba",79:"An-Nazi'at",80:"Abasa",81:"At-Takwir",82:"Al-Infitar",
+  83:"Al-Mutaffifin",84:"Al-Inshiqaq",85:"Al-Buruj",86:"At-Tariq",
+  87:"Al-A'la",88:"Al-Ghashiyah",89:"Al-Fajr",90:"Al-Balad",91:"Ash-Shams",
+  92:"Al-Layl",93:"Ad-Duha",94:"Ash-Sharh",95:"At-Tin",96:"Al-'Alaq",
+  97:"Al-Qadr",98:"Al-Bayyinah",99:"Az-Zalzalah",100:"Al-'Adiyat",
+  101:"Al-Qari'ah",102:"At-Takathur",103:"Al-'Asr",104:"Al-Humazah",
+  105:"Al-Fil",106:"Quraysh",107:"Al-Ma'un",108:"Al-Kawthar",
+  109:"Al-Kafirun",110:"An-Nasr",111:"Al-Masad",112:"Al-Ikhlas",
+  113:"Al-Falaq",114:"An-Nas"};
+
+function fillSuras(){
+  $('sura').innerHTML=Object.entries(SURAS)
+    .map(([k,v])=>`<option value="${k}">${k}. ${v} · ${SURAS_EN[k]||''}</option>`)
+    .join('');
+}
+// Long surahs are split into pages. Loading all 286 ayat of Al-Baqarah at
+// once meant every recited chunk was scanned against every ayah, which is
+// what made tracking crawl.
+S.pageSize=8; S.nPages=1; S.nAyat=7; S.ranges=null;
+
+async function fillAyat(){
+  const sura=+$('sura').value;
+  try{
+    const r=await fetch('/sura_info/'+sura).then(r=>r.json());
+    S.nAyat=r.ayat||7;
+    S.pageSize=r.page_size||8;
+    S.nPages=r.pages||1;
+    S.ranges=r.ranges||null;
+  }catch(e){ S.nAyat=7; S.pageSize=8; S.nPages=1; S.ranges=null; }
+
+  const o=[];
+  if(S.ranges&&S.ranges.length){
+    S.ranges.forEach((r,i)=>{
+      const pg=r.page?`صفحة ${r.page} · `:'';
+      o.push(`<option value="${i+1}">${pg}آية ${r.from}–${r.to}</option>`);
+    });
+  }else{
+    for(let p=1;p<=S.nPages;p++){
+      const a=(p-1)*S.pageSize+1;
+      const b=Math.min(S.nAyat,p*S.pageSize);
+      o.push(`<option value="${p}">آية ${a}–${b}</option>`);
+    }
+  }
+  $('pageSel').innerHTML=o.join('');
+  $('pageSel').value=1;
+  updatePgButtons();
+}
+
+function updatePgButtons(){
+  const p=+$('pageSel').value||1;
+  $('prevPg').disabled = p<=1;
+  $('nextPg').disabled = p>=S.nPages;
+}
+
+function pageRange(){
+  const p=+$('pageSel').value||1;
+  if(S.ranges&&S.ranges[p-1]) return [S.ranges[p-1].from, S.ranges[p-1].to];
+  return [ (p-1)*S.pageSize+1, Math.min(S.nAyat, p*S.pageSize) ];
+}
+
+// ---------- render ----------
+// Tashkeel colouring wraps each diacritic in its own <span> to tint it. That
+// splits the mark from its base letter and breaks Arabic shaping with the
+// KFGQPC mushaf font (silent-letter zeros rendered as big baseline circles).
+// Left off so the authentic font positions every mark correctly.
+const COLOR_TASHKEEL=false;
+const AR_DIG='٠١٢٣٤٥٦٧٨٩';
+const toArabicDigits=n=>String(n).replace(/\d/g,d=>AR_DIG[+d]);
+// Combining Arabic diacritics (harakat, tanwin, shadda, sukun, madd marks…).
+const HARAKA=/([ؐ-ًؚ-ٰٟۖ-ۜ۟-۪ۨ-ۭ]+)/g;
+const fmtWord=w=>COLOR_TASHKEEL?w.replace(HARAKA,'<span class="hk">$1</span>'):w;
+
+// Full authentic mushaf notation: show every mark (harakat + iqlab/ikhfa meems,
+// silent-letter zeros, pause-stops). The KFGQPC font positions them correctly
+// on the letters. Set HIDE_ANNOTATIONS=true to strip the annotation marks
+// (STRIP_MARKS) and show plain harakat only.
+const HIDE_ANNOTATIONS=false;
+const STRIP_MARKS=/[ۣ۪ۭۜ۟۠ۢۧۨ۫۬]/g;
+const cleanWord=w=>HIDE_ANNOTATIONS?w.replace(STRIP_MARKS,''):w;
+
+function wordSpan(aya,wi,w){
+  return `<span class="w" data-k="${aya}:${wi}">${fmtWord(cleanWord(w))}</span>`;
+}
+
+// Flat reading-order list of every word on the page, so a selection can span
+// ayahs. S.order[pos]={aya,idx}; S.orderPos["aya:idx"]=pos.
+function buildOrder(){
+  S.order=[]; S.orderPos={};
+  (S.page?S.page.ayat:[]).forEach(a=>{
+    a.words.forEach((w,wi)=>{
+      S.orderPos[`${a.aya}:${wi}`]=S.order.length;
+      S.order.push({aya:a.aya,idx:wi});
+    });
+  });
+}
+
+function render(){
+  if(!S.page||!S.page.ayat.length){
+    $('page').innerHTML='<div class="loading">لا يوجد نص</div>';return;
+  }
+  buildOrder();
+  // Ayat flow together, justified edge-to-edge, exactly like a printed page.
+  // Basmalah breaks out onto its own centred line.
+  let html='', flow=[];
+  const flush=()=>{
+    if(flow.length){html+=`<div class="ayah-flow">${flow.join(' ')}</div>`;flow=[];}
+  };
+  S.page.ayat.forEach(a=>{
+    if(a.is_basmalah){
+      flush();
+      html+=`<div class="ayah basmalah">`+
+        a.words.map((w,wi)=>wordSpan(a.aya,wi,w)).join(' ')+`</div>`;
+      return;
+    }
+    const words=a.words.map((w,wi)=>wordSpan(a.aya,wi,w)).join(' ');
+    flow.push(`${words} <span class="num">﴿${toArabicDigits(a.aya)}﴾</span>`);
+  });
+  flush();
+  $('page').innerHTML=html;
+}
+
+function paint(st){
+  if(!st) return;
+  const ws=st.state||{};
+  const hadSel = selActive();
+  document.querySelectorAll('.w').forEach(el=>{
+    const s=ws[el.dataset.k];
+    el.className='w'+(s?' '+s:'');
+  });
+  $('sBad').textContent=st.n_errors||0;
+  $('sOk').textContent=Object.values(ws).filter(v=>v==='good').length;
+  const anyBad=Object.values(ws).some(v=>v==='bad');
+  if(anyBad&&!S.live&&!RT.active&&!S.tipShown){
+    S.tipShown=true;
+    showTip('اضغط على أي كلمة حمراء لإعادة نطقها · tap a red word to retry',5000);
+  }
+  // keep the current ayah in view while reciting
+  if(S.live && typeof st.ayah_idx==='number' && S.page && S.page.ayat[st.ayah_idx]){
+    const aya=S.page.ayat[st.ayah_idx].aya;
+    const el=document.querySelector(`.w[data-k^="${aya}:"]`);
+    if(el){
+      const r=el.getBoundingClientRect();
+      if(r.top<70||r.bottom>innerHeight-70)
+        el.scrollIntoView({behavior:'smooth',block:'center'});
+    }
+  }
+
+  const errs=(st.errors||[]).slice().reverse();
+  if(hadSel) drawSel();
+  $('errs').innerHTML = errs.length ? errs.slice(0,30).map(e=>`
+    <div class="err">
+      ${e.word?`<div class="rule" style="font-family:'Amiri',serif;font-size:20px;color:var(--bad)">${e.word}</div>`:''}
+      <div class="reason">${errorReason(e)}</div>
+      <div class="meta">آية ${e.aya} · كلمة ${e.word_idx+1}
+        · <span dir="rtl" style="font-family:'Amiri',serif">${e.expected||'—'} ← ${e.heard||'—'}</span></div>
+    </div>`).join('') : '<div class="empty">لا أخطاء</div>';
+}
+
+// ---------- page ----------
+async function loadPage(){
+  $('page').innerHTML='<div class="loading">جارٍ التجهيز…</div>';
+  try{
+    const r=await fetch('/page',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({sura:+$('sura').value,
+        start_aya:pageRange()[0],end_aya:pageRange()[1]})}).then(r=>r.json());
+    if(r.error){$('page').innerHTML=`<div class="loading">${r.error}</div>`;return;}
+    S.page=r.page;render();paint({state:{},errors:[],n_errors:0});
+  }catch(e){
+    $('page').innerHTML=`<div class="loading">${e}</div>`;
+  }
+}
+
+// ---------- wav ----------
+function encodeWav(f32,rate){
+  const b=new ArrayBuffer(44+f32.length*2),v=new DataView(b);
+  const wr=(o,s)=>{for(let i=0;i<s.length;i++)v.setUint8(o+i,s.charCodeAt(i));};
+  wr(0,'RIFF');v.setUint32(4,36+f32.length*2,true);wr(8,'WAVE');
+  wr(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);
+  v.setUint16(22,1,true);v.setUint32(24,rate,true);
+  v.setUint32(28,rate*2,true);v.setUint16(32,2,true);v.setUint16(34,16,true);
+  wr(36,'data');v.setUint32(40,f32.length*2,true);
+  let o=44;for(let i=0;i<f32.length;i++){
+    const s=Math.max(-1,Math.min(1,f32[i]));
+    v.setInt16(o,s<0?s*0x8000:s*0x7FFF,true);o+=2;}
+  return new Blob([v],{type:'audio/wav'});
+}
+function downsample(buf,from,to){
+  if(to===from)return buf;
+  const r=from/to,n=Math.round(buf.length/r),out=new Float32Array(n);
+  for(let i=0;i<n;i++){
+    const s=i*r,i0=Math.floor(s),i1=Math.min(i0+1,buf.length-1);
+    out[i]=buf[i0]+(buf[i1]-buf[i0])*(s-i0);}
+  return out;
+}
+
+function setLiveHint(msg,kind){
+  const h=$('liveHint'); if(h) h.textContent=msg;
+  const d=$('liveDot'); if(d) d.className='dot '+(kind==='err'?'think':'live');
+}
+
+// "listening" line, annotated with the ayah currently being tracked.
+function livePos(r){
+  let s='يستمع…';
+  const i=r&&r.ayah_idx;
+  if(typeof i==='number'&&S.page&&S.page.ayat[i])
+    s+=' · آية '+S.page.ayat[i].aya;
+  return s;
+}
+
+// Turn the raw phoneme diff (expected vs heard) into a specific, plain sentence
+// that names the actual letter / harakah / madd at fault.
+const HARAKA_NAME={
+  'َ':'فتحة','ُ':'ضمة','ِ':'كسرة',
+  'ً':'تنوين فتح','ٌ':'تنوين ضم','ٍ':'تنوين كسر',
+  'ّ':'شدّة','ْ':'سكون','ٰ':'ألف مدّ'};
+const MADD_SET=new Set(['ا','و','ي','ۥ','ۦ','ٰ']);
+const stripMarks=s=>(s||'').replace(/[ً-ْٰۥۦ]/g,'');
+const marksIn=s=>[...(s||'')].filter(c=>HARAKA_NAME[c]).map(c=>HARAKA_NAME[c]);
+const maddCount=s=>[...(s||'')].filter(c=>MADD_SET.has(c)).length;
+
+// Short tajwīd hint for the trickier letters (articulation cues).
+const LETTER_TIP={
+  'ض':'مُفخّم من حافة اللسان مع الأضراس',
+  'ص':'مُفخّم مع إطباق اللسان',
+  'ط':'مُفخّم مُطبَق وشديد',
+  'ظ':'مُفخّم، طرف اللسان مع أطراف الثنايا',
+  'ق':'من أقصى اللسان، مُفخّم وشديد',
+  'خ':'من أدنى الحلق، مُفخّم',
+  'غ':'من أدنى الحلق، مُفخّم',
+  'ع':'من وسط الحلق بلا خنق',
+  'ح':'من وسط الحلق، همس صافٍ',
+  'ه':'من أقصى الحلق، همس خفيف',
+  'ر':'مكرّر، دون مبالغة في التكرار',
+  'ذ':'طرف اللسان مع أطراف الثنايا (لا تُبدلها دالاً)',
+  'ث':'طرف اللسان مع أطراف الثنايا (لا تُبدلها سيناً)',
+  'ء':'همزة محقّقة من أقصى الحلق'};
+
+// The reason WITHOUT the word prefix (side panel already shows the word).
+function errorReason(e){
+  const exp=e.expected||'', heard=e.heard||'';
+  if(e.kind==='vowel'){
+    const em=marksIn(exp), hm=marksIn(heard);
+    if(em.length||hm.length)
+      return `الحركة: الصواب ${em.join('، ')||'—'}`+
+             ` وأنت نطقت ${hm.join('، ')||'—'}`;
+    return 'راجِع الحركة / التشكيل';
+  }
+  if(e.kind==='madd')
+    return 'المدّ: '+(maddCount(heard)<maddCount(exp)?'طوِّل المدّ':'أَقصِر المدّ');
+  // shape / articulation
+  const el=stripMarks(exp), hl=stripMarks(heard);
+  if(el){
+    let msg=`انطِق حرف «${el}» بوضوح`+(hl?` (سُمِع «${hl}»)`:'');
+    if(el.length===1&&LETTER_TIP[el]) msg+=` — ${LETTER_TIP[el]}`;
+    return msg;
+  }
+  return 'غير واضح، أعِد النطق';
+}
+
+// Full sentence with the word, for the bottom bars / tips.
+function explainError(e){ return `«${e.word||''}» — ${errorReason(e)}`; }
+
+async function send(f32){
+  if(S.busy){S.queued++;return;}
+  S.busy=true;
+  try{
+    const fd=new FormData();
+    fd.append('audio',encodeWav(f32,16000),'c.wav');
+    const r=await fetch('/chunk',{method:'POST',body:fd}).then(r=>r.json());
+    if(r&&r.state) paint(r);
+    if(r&&r.error){
+      $('st').textContent=r.error.slice(0,40);
+      $('st').className='badge err';
+      if(S.live) setLiveHint(r.error.slice(0,60),'err');
+    } else if(r&&r.skipped&&(r.reason==='unclear'||r.reason==='no placement')){
+      if(S.live){$('st').textContent='لم يُتعرّف · unclear';
+                 $('st').className='badge';
+                 setLiveHint('لم يُتعرّف · حاول مجدداً');}
+    } else if(S.live){
+      $('st').textContent='يستمع…';$('st').className='badge live';
+      // Surface a mistake the moment this chunk adds one; otherwise show the
+      // current position. (n_errors is cumulative, so compare with last chunk.)
+      const errs=(r&&r.errors)||[];
+      const prev=S.liveErrN;
+      S.liveErrN=(r&&r.n_errors)||0;
+      if(prev!=null&&S.liveErrN>prev&&errs.length){
+        // Name the specific letter / harakah / madd at fault.
+        setLiveHint(explainError(errs[errs.length-1]),'err');
+      }else{
+        setLiveHint(livePos(r));
+      }
+    }
+  }catch(e){}
+  S.busy=false;
+}
+
+// ---------------------------------------------------------------------
+// RETRY — tap a red word and say just that word
+// ---------------------------------------------------------------------
+const RT={active:false,rec:null,stream:null,ctx:null,node:null,buf:[],
+          key:null,aya:null,widx:null,timer:null,tipTimer:null};
+
+function showTip(html,ms){
+  $('tip').innerHTML=html;$('tip').classList.add('show');
+  clearTimeout(RT.tipTimer);
+  if(ms) RT.tipTimer=setTimeout(()=>$('tip').classList.remove('show'),ms);
+}
+function hideTip(){$('tip').classList.remove('show');}
+
+// ---------------------------------------------------------------------
+// SELECTION — drag across words, then recite exactly those words
+//
+// Selecting removes the placement problem entirely: the reciter states which
+// words they are about to say, so nothing has to be located on the page. That
+// is what made single words fail in live mode and whole ayat get skipped.
+// ---------------------------------------------------------------------
+// Selection spans reading order: anchor/head are positions in S.order, so a
+// drag can cross ayah boundaries.
+const SEL={dragging:false,anchor:null,head:null,busy:false};
+const REF_AUDIO={audio:null,cache:{},stopTimer:null,playing:false};
+
+function selKey(el){                        // -> order position, or null
+  const k=el.dataset.k;
+  return (k&&S.orderPos&&(k in S.orderPos))?S.orderPos[k]:null;
+}
+function selActive(){return SEL.anchor!==null;}
+function selRange(){                        // [lo,hi] positions, or null
+  if(SEL.anchor===null) return null;
+  return [Math.min(SEL.anchor,SEL.head),Math.max(SEL.anchor,SEL.head)];
+}
+function selWords(){                         // [{aya,idx}, ...] in order
+  const r=selRange(); if(!r) return [];
+  return S.order.slice(r[0],r[1]+1);
+}
+function selSpans(){                         // [{aya,from,to}, ...] per-ayah runs
+  const out=[];
+  for(const w of selWords()){
+    const last=out[out.length-1];
+    if(last&&last.aya===w.aya&&w.idx===last.to+1) last.to=w.idx;
+    else out.push({aya:w.aya,from:w.idx,to:w.idx});
+  }
+  return out;
+}
+function selSig(){return SEL.anchor===null?'':SEL.anchor+'-'+SEL.head;}
+function wEl(aya,idx){return document.querySelector(`.w[data-k="${aya}:${idx}"]`);}
+
+function clearSel(){
+  stopReferenceAudio();
+  clearArrows();
+  document.querySelectorAll('.w.sel,.w.insel')
+    .forEach(e=>e.classList.remove('sel','insel'));
+  SEL.anchor=SEL.head=null;
+  $('selbar').classList.remove('show');
+  $('selPlay').classList.remove('show');
+  $('selAudioStatus').textContent='';   // hides the header badge (:empty)
+  const t=document.getElementById('selTries'); if(t) t.textContent='';
+}
+
+function clearArrows(){
+  document.querySelectorAll('.link').forEach(e=>e.remove());
+}
+
+function ayahByNo(no){
+  return S.page ? S.page.ayat.find(a=>a.aya===no) : null;
+}
+
+function stopReferenceAudio(){
+  clearInterval(REF_AUDIO.stopTimer);
+  REF_AUDIO.stopTimer=null;
+  if(REF_AUDIO.audio){
+    REF_AUDIO.audio.pause();
+    REF_AUDIO.audio.ontimeupdate=null;
+    REF_AUDIO.audio.onended=null;
+  }
+  REF_AUDIO.playing=false;
+  const play=$('selPlay');
+  if(play){play.disabled=false;play.textContent='▶ استمع · Listen';}
+}
+
+async function getReferenceAudio(aya){
+  if(REF_AUDIO.cache[aya]) return REF_AUDIO.cache[aya];
+  const response=await fetch('/reference_audio?aya='+encodeURIComponent(aya));
+  const data=await response.json();
+  if(!response.ok||data.error) throw new Error(data.error||'reference unavailable');
+  REF_AUDIO.cache[aya]=data;
+  return data;
+}
+
+async function updateReferenceAvailability(){
+  if(!selActive()) return;
+  const sig=selSig(), status=$('selAudioStatus'), play=$('selPlay');
+  const spans=selSpans();
+  status.className='audio-status';
+
+  // Pronunciation mode uses local per-word files -- no internet needed. Check
+  // that every selected word (across every ayah) actually has a recording.
+  if(S.pronMode){
+    try{
+      const sura=+$('sura').value;
+      let missing=false;
+      for(const sp of spans){
+        const r=await fetch(`/word_audio_list?sura=${sura}&aya=${sp.aya}`)
+                       .then(x=>x.json());
+        if(selSig()!==sig) return;
+        const have=new Set(r.words||[]);
+        for(let w=sp.from;w<=sp.to;w++) if(!have.has(w+1)) missing=true;
+      }
+      if(missing){ status.textContent='⚠ لا يوجد تسجيل نطق لبعض الكلمات';
+                   status.classList.add('need-net'); play.disabled=true; }
+      else { status.textContent='✓ نطق كلمة‑بكلمة';
+             if(!REF_AUDIO.playing) play.disabled=false; }
+    }catch(err){
+      if(selSig()!==sig) return;
+      status.textContent='تعذّر التحقق من تسجيل النطق';
+      status.classList.add('need-net');
+    }
+    return;
+  }
+
+  try{
+    // Husary: consider it ready if every selected ayah is cached.
+    let allCached=true;
+    for(const sp of spans){
+      const d=await fetch('/reference_audio_status?aya='+sp.aya).then(x=>x.json());
+      if(selSig()!==sig) return;
+      if(!d.cached) allCached=false;
+    }
+    const data={cached:allCached};
+    if(data.cached){
+      status.textContent='✓ Offline audio ready';
+      if(!REF_AUDIO.playing) play.disabled=false;
+    }else if(!navigator.onLine){
+      status.textContent='⚠ Connect to internet for audio';
+      status.classList.add('need-net');
+      play.disabled=true;
+    }else{
+      status.textContent='Audio will cache for offline use';
+      if(!REF_AUDIO.playing) play.disabled=false;
+    }
+  }catch(err){
+    if(selSig()!==sig) return;
+    status.textContent=navigator.onLine ? 'Audio status unavailable'
+                                        : '⚠ Connect to internet for audio';
+    status.classList.add('need-net');
+    if(!navigator.onLine) play.disabled=true;
+  }
+}
+
+async function playSelection(){
+  if(!selActive()) return;
+  if(REF_AUDIO.playing){ stopReferenceAudio(); startLoop(); return; }
+  if(S.live) stop();
+  if(LOOP.running) stopLoop();
+
+  const sig=selSig(), spans=selSpans();
+  // Pronunciation mode: clean single-word recordings, in reading order.
+  if(S.pronMode){
+    const sura=+$('sura').value;
+    const urls=selWords().map(w=>`/word_audio/${sura}/${w.aya}/${w.idx+1}.opus`);
+    return playClipSequence(urls,sig);
+  }
+
+  // Tajweed (Husary): play each ayah's slice in order, one after another.
+  const play=$('selPlay');
+  play.disabled=true;play.textContent='تحميل… · Loading';
+  setBar('think','جاري تحميل تلاوة الحصري…');
+  REF_AUDIO.playing=true;
+  let si=0;
+  const finishAll=()=>{
+    if(!REF_AUDIO.playing) return;
+    stopReferenceAudio();
+    setBar('', 'استمع ثم اقرأ…');
+    setTimeout(()=>{if(selSig()===sig&&!S.live) startLoop();},180);
+  };
+  const playSpan=async()=>{
+    if(!REF_AUDIO.playing) return;
+    if(si>=spans.length){ finishAll(); return; }
+    const sp=spans[si++];
+    try{
+      const data=await getReferenceAudio(sp.aya);
+      const words=(data.segments||[])
+        .filter(s=>s.word_idx>=sp.from&&s.word_idx<=sp.to)
+        .sort((a,b)=>a.word_idx-b.word_idx);
+      if(!words.length) throw new Error('timings missing');
+      const start=words[0].start_ms/1000;
+      const end=words[words.length-1].end_ms/1000;
+      const audio=new Audio(data.audio_url);
+      audio.preload='auto'; REF_AUDIO.audio=audio;
+      const nextSpan=()=>{ clearInterval(REF_AUDIO.stopTimer);
+                           REF_AUDIO.stopTimer=null;
+                           audio.ontimeupdate=audio.onended=null;
+                           audio.pause(); playSpan(); };
+      audio.ontimeupdate=()=>{if(audio.currentTime>=end) nextSpan();};
+      audio.onended=nextSpan;
+      play.textContent='■ إيقاف · Stop'; play.disabled=false;
+      await new Promise((res,rej)=>{
+        const begin=()=>{try{audio.currentTime=start;}catch(e){}
+                         audio.play().then(res).catch(rej);};
+        if(audio.readyState>=1) begin();
+        else{audio.addEventListener('loadedmetadata',begin,{once:true});
+             audio.addEventListener('error',()=>rej(new Error('audio')),{once:true});
+             audio.load();}
+      });
+      REF_AUDIO.stopTimer=setInterval(()=>{
+        if(REF_AUDIO.audio&&REF_AUDIO.audio.currentTime>=end) nextSpan();
+      },40);
+    }catch(err){
+      stopReferenceAudio();
+      setBar('', navigator.onLine ? 'تعذر تشغيل تلاوة الحصري'
+                                  : 'اتصل بالإنترنت لتحميل التلاوة');
+      updateReferenceAvailability();
+    }
+  };
+  playSpan();
+}
+
+// Play a list of clip URLs (clean per-word mujawwad recordings) back-to-back.
+function playClipSequence(urls,sig){
+  const play=$('selPlay');
+  const audio=new Audio();
+  REF_AUDIO.audio=audio; REF_AUDIO.playing=true;
+  play.disabled=false; play.textContent='■ إيقاف · Stop';
+  setBar('think','تشغيل كلمة‑بكلمة…');
+  let idx=0, missed=0;
+  const finish=()=>{
+    stopReferenceAudio();
+    setBar('', missed>=urls.length ? 'لا يوجد تسجيل لهذه الكلمات'
+                                   : 'استمع ثم اقرأ…');
+    setTimeout(()=>{if(selSig()===sig&&!S.live) startLoop();},180);
+  };
+  const next=()=>{
+    if(!REF_AUDIO.playing) return;
+    if(idx>=urls.length){ finish(); return; }
+    audio.src=urls[idx++];
+    audio.play().catch(()=>{ missed++; next(); });
+  };
+  audio.onended=()=>{ if(REF_AUDIO.playing) next(); };
+  audio.onerror =()=>{ if(REF_AUDIO.playing){ missed++; next(); } };
+  next();
+}
+
+// Suggest extending the selection when the edge word is phonetically fused
+// with its neighbour (idgham, ikhfa, the linking of ٱللَّه, madd munfasil...).
+// Purely advisory -- reciting the selection as-is still works.
+function drawArrows(){
+  clearArrows();
+  const ws=selWords(); if(!ws.length) return;
+  const r=selRange();
+  const first=ws[0], last=ws[ws.length-1];
+
+  const mk=(cls,targetPos,title)=>{
+    const s=document.createElement('span');
+    s.className='link '+cls; s.title=title;
+    s.onmousedown=ev=>{ev.stopPropagation();ev.preventDefault();};
+    s.onclick=ev=>{
+      ev.stopPropagation();
+      const lo=Math.min(r[0],r[1],targetPos), hi=Math.max(r[0],r[1],targetPos);
+      SEL.anchor=lo; SEL.head=hi;
+      if(LOOP.running) stopLoop();
+      drawSel(); startLoop();
+    };
+    return s;
+  };
+
+  // word BEFORE the selection (same ayah) -- rendered to the RIGHT in RTL
+  const fa=ayahByNo(first.aya);
+  if(fa&&fa.links&&fa.links[first.idx]&&fa.links[first.idx].prev&&first.idx>0){
+    const nb=wEl(first.aya,first.idx-1);
+    if(nb&&nb.parentNode)
+      nb.parentNode.insertBefore(
+        mk('to-prev',r[0]-1,'مرتبطة بما قبلها · include the previous word'),
+        nb.nextSibling);
+  }
+  // word AFTER the selection (same ayah) -- rendered to the LEFT in RTL
+  const la=ayahByNo(last.aya);
+  if(la&&la.links&&la.links[last.idx]&&la.links[last.idx].next&&
+     last.idx<la.words.length-1){
+    const nb=wEl(last.aya,last.idx+1);
+    if(nb&&nb.parentNode)
+      nb.parentNode.insertBefore(
+        mk('to-next',r[1]+1,'مرتبطة بما بعدها · include the next word'),nb);
+  }
+}
+
+function drawSel(){
+  document.querySelectorAll('.w.sel,.w.insel')
+    .forEach(e=>e.classList.remove('sel','insel'));
+  clearArrows();
+  if(!selActive()) return;
+  const ws=selWords();
+  const parts=[];
+  for(const {aya,idx} of ws){
+    const el=wEl(aya,idx);
+    if(el){
+      // Blue frame stays on the whole pick so it always reads as one group.
+      el.classList.add('insel');
+      // The solid blue fill stays ONLY until a word is judged; once it comes
+      // back correct (green) or wrong (red), that colour shows through.
+      if(!el.classList.contains('good')&&!el.classList.contains('bad'))
+        el.classList.add('sel');
+      parts.push(el.textContent.trim());
+    }
+  }
+  $('selTxt').textContent=parts.join(' ');
+  $('selbar').classList.add('show');
+  positionPlayFab(ws);
+  updateReferenceAvailability();
+  drawArrows();
+}
+
+// Float the play/pause button next to the chosen word(s). In RTL we prefer
+// the LEFT of the selection (the reading-direction end); if the screen edge
+// leaves no room there, it flips to the right side instead.
+function positionPlayFab(ws){
+  const fab=$('selPlay');
+  if(!selActive()){fab.classList.remove('show');return;}
+  ws=ws||selWords();
+  let top=Infinity,bottom=-Infinity,left=Infinity,right=-Infinity;
+  for(const {aya,idx} of ws){
+    const el=wEl(aya,idx);
+    if(!el) continue;
+    const r=el.getBoundingClientRect();
+    top=Math.min(top,r.top);bottom=Math.max(bottom,r.bottom);
+    left=Math.min(left,r.left);right=Math.max(right,r.right);
+  }
+  if(!isFinite(top)){fab.classList.remove('show');return;}
+  fab.classList.add('show');
+  const fw=fab.offsetWidth||96, fh=fab.offsetHeight||36, gap=12;
+  let x=left-gap-fw;                       // left of the selection (RTL end)
+  if(x<8) x=right+gap;                      // no room -> flip to the right
+  x=Math.max(8,Math.min(innerWidth-fw-8,x));
+  let y=(top+bottom)/2-fh/2;
+  y=Math.max(76,Math.min(innerHeight-fh-8,y)); // stay clear of the header
+  fab.style.left=x+'px';
+  fab.style.top=y+'px';
+}
+
+function repositionPlayFab(){
+  if(!selActive()) return;
+  positionPlayFab(selWords());
+}
+window.addEventListener('scroll',repositionPlayFab,true);
+window.addEventListener('resize',repositionPlayFab);
+
+document.addEventListener('mousedown',e=>{
+  const el=e.target.closest('.w');
+  if(!el){ if(!e.target.closest('.selbar')&&!e.target.closest('.playfab')){stopLoop();clearSel();} return; }
+  const pos=selKey(el); if(pos===null) return;
+  e.preventDefault();
+  if(S.live) stop();
+  if(LOOP.running) stopLoop();
+  SEL.dragging=true;SEL.anchor=pos;SEL.head=pos;
+  drawSel();
+});
+
+document.addEventListener('mouseover',e=>{
+  if(!SEL.dragging) return;
+  const el=e.target.closest('.w'); if(!el) return;
+  const pos=selKey(el); if(pos===null) return;   // any ayah -> multi-ayah drag
+  SEL.head=pos; drawSel();
+});
+
+document.addEventListener('mouseup',()=>{
+  if(SEL.dragging){SEL.dragging=false; if(selActive()) startLoop();}
+});
+
+// touch support
+document.addEventListener('touchstart',e=>{
+  const el=e.target.closest('.w'); if(!el) return;
+  const pos=selKey(el); if(pos===null) return;
+  if(S.live) stop();
+  SEL.dragging=true;SEL.anchor=pos;SEL.head=pos;
+  drawSel();
+},{passive:true});
+
+document.addEventListener('touchmove',e=>{
+  if(!SEL.dragging) return;
+  const t=e.touches[0];
+  const el=document.elementFromPoint(t.clientX,t.clientY);
+  const w=el&&el.closest?el.closest('.w'):null; if(!w) return;
+  const pos=selKey(w); if(pos===null) return;
+  SEL.head=pos; drawSel();
+},{passive:true});
+
+document.addEventListener('touchend',()=>{
+  if(SEL.dragging){SEL.dragging=false; if(selActive()) startLoop();}
+});
+
+// ---------------------------------------------------------------------
+// Auto-listen loop.
+//
+// Selecting a word starts listening immediately -- no button. After each
+// attempt it listens again, so the reciter can repeat until the word turns
+// green. The loop ends when everything selected is correct, or when the
+// selection is cleared.
+// ---------------------------------------------------------------------
+const LOOP={ctx:null,node:null,stream:null,buf:[],running:false,
+            busy:false,attempts:0,stop:false};
+
+$('selPlay').onclick=playSelection;
+$('selClr').onclick=()=>{stopLoop();clearSel();};
+window.addEventListener('online',updateReferenceAvailability);
+window.addEventListener('offline',updateReferenceAvailability);
+
+function setBar(state,hint,tries){
+  const d=$('selDot');
+  d.className='dot'+(state?' '+state:'');
+  if(hint!==undefined) $('selHint').textContent=hint;
+  let el=document.getElementById('selTries');
+  if(!el){
+    el=document.createElement('span');
+    el.id='selTries';el.className='tries';
+    $('selbar').insertBefore(el,$('selClr'));
+  }
+  el.textContent=tries?`محاولة ${tries}`:'';
+}
+
+function stopLoop(){
+  LOOP.stop=true;LOOP.running=false;
+  try{LOOP.node&&LOOP.node.disconnect();}catch(e){}
+  try{LOOP.ctx&&LOOP.ctx.close();}catch(e){}
+  try{LOOP.stream&&LOOP.stream.getTracks().forEach(t=>t.stop());}catch(e){}
+  LOOP.ctx=LOOP.node=LOOP.stream=null;LOOP.buf=[];
+  LOOP.attempts=0;
+  $('lvl').style.width='0';
+}
+
+async function startLoop(){
+  if(LOOP.running||!selActive()) return;
+  if(S.live) stop();
+
+  try{
+    LOOP.stream=await navigator.mediaDevices.getUserMedia({audio:{
+      channelCount:1,echoCancellation:false,noiseSuppression:false,
+      autoGainControl:false}});
+  }catch(err){
+    setBar('', 'الميكروفون مرفوض · mic denied');
+    return;
+  }
+
+  const AC=window.AudioContext||window.webkitAudioContext;
+  LOOP.ctx=new AC();
+  const sn=LOOP.ctx.createMediaStreamSource(LOOP.stream);
+  LOOP.node=LOOP.ctx.createScriptProcessor(4096,1,1);
+  const sr=LOOP.ctx.sampleRate;
+  LOOP.buf=[];LOOP.running=true;LOOP.stop=false;LOOP.attempts=0;
+  let spoke=false,quiet=0;
+
+  setBar('live','انطقها…');
+
+  LOOP.node.onaudioprocess=ev=>{
+    if(!LOOP.running||LOOP.busy) return;
+    const d=ev.inputBuffer.getChannelData(0);
+    LOOP.buf.push(new Float32Array(d));
+    let s=0;for(let i=0;i<d.length;i++)s+=d[i]*d[i];
+    const rms=Math.sqrt(s/d.length);
+    const ms=(d.length/sr)*1000;
+    $('lvl').style.width=Math.min(100,rms*900)+'%';
+
+    if(rms>=0.013){spoke=true;quiet=0;}
+    else if(spoke){
+      quiet+=ms;
+      if(quiet>450){
+        const parts=LOOP.buf;LOOP.buf=[];spoke=false;quiet=0;
+        submitAttempt(parts,sr);
+      }
+    }
+    // never let the buffer grow without bound while silent
+    if(!spoke&&LOOP.buf.length>Math.ceil(sr*3/4096)) LOOP.buf.shift();
+    if(LOOP.buf.reduce((n,b)=>n+b.length,0)>sr*15){
+      const parts=LOOP.buf;LOOP.buf=[];spoke=false;quiet=0;
+      submitAttempt(parts,sr);
+    }
+  };
+  sn.connect(LOOP.node);LOOP.node.connect(LOOP.ctx.destination);
+}
+
+async function submitAttempt(parts,sr){
+  const tot=parts.reduce((n,b)=>n+b.length,0);
+  if(tot<sr*0.3||LOOP.busy||!selActive()) return;
+  LOOP.busy=true;LOOP.attempts++;
+  setBar('think','يفحص…',LOOP.attempts);
+
+  const all=new Float32Array(tot);
+  let o=0;for(const b of parts){all.set(b,o);o+=b.length;}
+  const spans=selSpans();
+
+  const fd=new FormData();
+  fd.append('audio',encodeWav(downsample(all,sr,16000),16000),'s.wav');
+  fd.append('spans',JSON.stringify(spans));
+
+  try{
+    const r=await fetch('/selection',{method:'POST',body:fd})
+                   .then(x=>x.json());
+    if(r.state) paint(r);
+
+    if(r.error||!r.ok){
+      setBar('live',r.reason||'حاول مجدداً',LOOP.attempts);
+    }else{
+      const bad=(r.words||[]).filter(w=>w.status==='bad');
+      if(!bad.length){
+        setBar('ok','✓ أحسنت',LOOP.attempts);
+        for(const {aya,idx} of selWords()){
+          const el=wEl(aya,idx);
+          if(el){el.classList.add('retry-ok');
+                 setTimeout(()=>el.classList.remove('retry-ok'),1200);}
+        }
+        // All correct -- stop listening but KEEP the selection (all green)
+        // on screen. It only clears when the user clicks elsewhere.
+        stopLoop();
+        drawSel();
+      }else{
+        const f=bad[0];
+        // results carry (aya, word_idx); read the word text off the page.
+        const wel=wEl(f.aya,f.word_idx);
+        const fe=Object.assign({},f,{word:wel?wel.textContent.trim():''});
+        setBar('live', explainError(fe)+' · أعِد', LOOP.attempts);
+        drawSel();
+      }
+    }
+  }catch(err){
+    setBar('live','خطأ · أعد',LOOP.attempts);
+  }
+  LOOP.busy=false;
+}
+
+// Listening style (reference audio):
+//   Tajweed        = Husary tarteel, with cross-word tajweed rules (default)
+//   Normal Reading = clean, independent single-word recordings
+// pronMode=true => Normal Reading.
+S.pronMode=false;
+function setListenMode(pron){
+  S.pronMode=pron;
+  $('segTaj').classList.toggle('on',!pron);
+  $('segNorm').classList.toggle('on',pron);
+  if(REF_AUDIO.playing) stopReferenceAudio();
+  if(selActive()) updateReferenceAvailability();
+}
+$('segTaj').onclick=()=>{
+  if(!S.pronMode) return;
+  setListenMode(false);
+  showTip('التجويد: تلاوة الحصري بالترتيل وأحكام التجويد',3000);
+};
+$('segNorm').onclick=()=>{
+  if(S.pronMode) return;
+  setListenMode(true);
+  showTip('القراءة العادية: نطق كل كلمة مستقلاً وواضحاً (بدون أحكام الوصل)',3000);
+};
+setListenMode(false);   // default = Tajweed
+
+// ---------- recording ----------
+function flushPhrase(sr){
+  const tot=S.phrase.reduce((n,b)=>n+b.length,0);
+  S.speaking=false;S.silentFor=0;
+  const parts=S.phrase;S.phrase=[];S.preroll=[];
+  if(tot < sr*MIN_PHRASE_S) return;
+  const all=new Float32Array(tot);
+  let o=0;for(const b of parts){all.set(b,o);o+=b.length;}
+  send(downsample(all,sr,16000));
+}
+
+async function start(){
+  // Standard reading and word-selection are mutually exclusive: drop any
+  // active selection so the two bottom bars never overlap.
+  if(selActive()) clearSel();
+  S.liveErrN=null;   // null = first chunk sets the baseline (no false mistake)
+  try{
+    S.stream=await navigator.mediaDevices.getUserMedia({audio:{
+      channelCount:1,echoCancellation:false,noiseSuppression:false,
+      autoGainControl:false}});
+  }catch(e){$('st').textContent='الميكروفون مرفوض';
+            $('st').className='badge err';return;}
+
+  const AC=window.AudioContext||window.webkitAudioContext;
+  S.ctx=new AC();
+  const src=S.ctx.createMediaStreamSource(S.stream);
+  S.node=S.ctx.createScriptProcessor(4096,1,1);
+  
+  S.silentFor=0; S.speaking=false; S.phrase=[]; S.preroll=[];
+  const sr=S.ctx.sampleRate;
+  const prerollMax=Math.floor(sr*PRE_ROLL_S);
+
+  S.node.onaudioprocess=e=>{
+    if(!S.live)return;
+    const d=e.inputBuffer.getChannelData(0);
+    const copy=new Float32Array(d);
+
+    // level
+    let sum=0;for(let i=0;i<d.length;i++)sum+=d[i]*d[i];
+    const rms=Math.sqrt(sum/d.length);
+    const w=Math.min(100,rms*900)+'%';
+    $('lvl').style.width=w; $('liveLvl').style.width=w;
+
+    const blockMs=(d.length/sr)*1000;
+
+    if(rms>=SIL_RMS){
+      // speech
+      if(!S.speaking){
+        S.speaking=true;
+        // prepend the pre-roll so the first consonant is not clipped
+        S.phrase=S.preroll.slice();
+        S.preroll=[];
+      }
+      S.silentFor=0;
+      S.phrase.push(copy);
+    }else{
+      // silence
+      if(S.speaking){
+        S.silentFor+=blockMs;
+        S.phrase.push(copy);          // keep the trailing silence
+        if(S.silentFor>=SIL_HOLD_MS){
+          flushPhrase(sr);
+        }
+      }else{
+        // rolling pre-roll buffer while quiet
+        S.preroll.push(copy);
+        let tot=S.preroll.reduce((n,b)=>n+b.length,0);
+        while(tot>prerollMax&&S.preroll.length>1){
+          tot-=S.preroll[0].length;S.preroll.shift();
+        }
+      }
+    }
+
+    // safety valve: someone reciting without pause
+    if(S.speaking){
+      const tot=S.phrase.reduce((n,b)=>n+b.length,0);
+      if(tot>sr*MAX_PHRASE_S) flushPhrase(sr);
+    }
+  };
+
+  src.connect(S.node);S.node.connect(S.ctx.destination);
+
+  S.live=true;
+  $('rec').textContent='■ إيقاف · Stop';
+  $('rec').classList.add('live','pulse');
+  $('st').textContent='يستمع…';$('st').className='badge live';
+  $('liveHint').textContent='يستمع…';
+  $('livebar').classList.add('show');
+}
+
+function stop(){
+  // flush the phrase in progress before tearing anything down
+  if(S.ctx&&S.phrase&&S.phrase.length){
+    try{flushPhrase(S.ctx.sampleRate);}catch(e){}
+  }
+  S.live=false;
+  try{S.node&&S.node.disconnect();}catch(e){}
+  try{S.ctx&&S.ctx.close();}catch(e){}
+  try{S.stream&&S.stream.getTracks().forEach(t=>t.stop());}catch(e){}
+  S.phrase=[];S.preroll=[];
+  $('rec').textContent='● ابدأ · Start';
+  $('rec').classList.remove('live','pulse');
+  $('st').textContent='متوقف';$('st').className='badge';
+  $('lvl').style.width='0'; $('liveLvl').style.width='0';
+  $('livebar').classList.remove('show');
+}
+
+// ---------- health ----------
+async function checkHealth(){
+  try{
+    const h=await fetch('/health').then(r=>r.json());
+    if(h.engine){
+      $('setup').classList.remove('show');
+      $('st').textContent='جاهز';$('st').className='badge';
+      $('rec').disabled=false;
+      return true;
+    }
+    $('setup').classList.add('show');
+    $('setup').innerHTML=`
+      <b style="color:var(--bad)">المحرك غير مشغّل · engine not running</b><br><br>
+      شغّل التطبيق هكذا:<br>
+      <code>python run.py</code><br><br>
+      <span style="color:var(--muted)">engine (8000): ${h.engine?'✓':'✗'}</span>`;
+    $('st').textContent='الخوادم متوقفة';$('st').className='badge err';
+    $('rec').disabled=true;
+    return false;
+  }catch(e){return false;}
+}
+
+// ---------- wiring ----------
+$('rec').onclick=()=>S.live?stop():start();
+$('liveStop').onclick=stop;
+$('clr').onclick=async()=>{
+  const r=await fetch('/reset',{method:'POST'}).then(r=>r.json());paint(r);};
+$('panel').onclick=()=>$('side').classList.toggle('open');
+
+// Verse text size (persisted).
+S.vs=parseFloat(localStorage.getItem('vs'))||1;
+function applyVs(){document.documentElement.style.setProperty('--vs',S.vs);}
+function bumpVs(d){
+  S.vs=Math.min(2.2,Math.max(0.7,+(S.vs+d).toFixed(2)));
+  localStorage.setItem('vs',S.vs); applyVs();
+}
+$('szPlus').onclick=()=>bumpVs(0.1);
+$('szMinus').onclick=()=>bumpVs(-0.1);
+applyVs();
+
+// Keep the (default-open) mistakes panel below the header so it never covers
+// the toolbar, even when the header wraps to two rows.
+function positionSide(){
+  const h=document.querySelector('header');
+  if(h){
+    $('side').style.top=h.offsetHeight+'px';
+    const sz=document.querySelector('.sizer');       // keep +/- just below header
+    if(sz) sz.style.top=(h.offsetHeight+16)+'px';
+  }
+}
+window.addEventListener('resize',positionSide);
+positionSide();
+$('sura').onchange=async()=>{await fillAyat();loadPage();};
+$('pageSel').onchange=()=>{updatePgButtons();loadPage();};
+$('prevPg').onclick=()=>{
+  const p=+$('pageSel').value||1;
+  if(p>1){$('pageSel').value=p-1;updatePgButtons();loadPage();}
+};
+$('nextPg').onclick=()=>{
+  const p=+$('pageSel').value||1;
+  if(p<S.nPages){$('pageSel').value=p+1;updatePgButtons();loadPage();}
+};
+
+(async function boot(){
+  fillSuras();
+  await fillAyat();
+  await loadPage();
+  await checkHealth();
+  positionSide();
+  setInterval(checkHealth,8000);
+})();
+</script>
+</body>
+</html>

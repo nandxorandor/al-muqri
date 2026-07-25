@@ -1,0 +1,30 @@
+# ─── Secrets / machine-specific ───────────────────────────────
+certs/                      # self-signed HTTPS key+cert (PRIVATE — never commit)
+.env
+*.pem
+
+# ─── Python ───────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# ─── Editor / OS junk ─────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.swp
+.vscode/
+.idea/
+
+# ─── Claude Code / tooling ────────────────────────────────────
+.claude/
+
+# ─── Large data ───────────────────────────────────────────────
+# NOTE: reference_audio/mujawwad IS committed (the app's word-by-word audio,
+# ~416 MB / 77k files) so the repo works out of the box.
+# The following are kept OUT of git:
+reference_audio/muallim/       # unused alternate reciter set
+reference_audio/husary/        # Tajweed audio — cached automatically at runtime
+Quranic-Word-By-Word-Audio-Data/   # upstream dataset clone (its own git repo)
