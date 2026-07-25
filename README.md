@@ -6,8 +6,7 @@
      github.com and DRAG-AND-DROP the mp4 here (auto-hosts + inline player, ≤10 MB).
      Or commit it to docs/demo.mp4 and keep the raw URL line below. -->
 
-https://www.youtube.com/watch?v=qnHhzcH6kX8
----
+[![تطبيق معلم القرآن](https://youtube.com)](https://www.youtube.com/watch?v=qnHhzcH6kX8)---
 
 <div dir="rtl">
 
