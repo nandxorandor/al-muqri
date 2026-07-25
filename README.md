@@ -1,5 +1,4 @@
-# 📖 المقرئ · Al‑Muqri’
-
+# 📖 المقرئ · Al‑Muqri
 ## 🎬 Demo · عرض توضيحي
 
 <!-- Replace the link below with your video. Easiest: edit this README on
