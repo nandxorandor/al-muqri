@@ -1,5 +1,67 @@
 # 📖 المقرئ · Al‑Muqri’
 
+## 🎬 Demo · عرض توضيحي
+
+<!-- Replace the link below with your video. Easiest: edit this README on
+     github.com and DRAG-AND-DROP the mp4 here (auto-hosts + inline player, ≤10 MB).
+     Or commit it to docs/demo.mp4 and keep the raw URL line below. -->
+
+https://github.com/nandxorandor/al-muqri/raw/main/docs/demo.mp4
+
+---
+
+<div dir="rtl">
+
+## 🇸🇦 بالعربية
+
+تطبيق ويب يعمل محليًا يساعدك على **تلاوة القرآن الكريم مع تصحيح فوري على مستوى
+الحروف والصوتيات** لنُطقك وتجويدك، بالاعتماد على نموذج
+[`quran-muaalem`](https://arxiv.org/abs/2509.00094). اقرأ من صفحة تشبه المصحف،
+اختر كلمة أو عدّة كلمات بالسحب (حتى عبر أكثر من آية)، استمع إلى التلاوة المرجعية،
+ثم اقرأ لترى كل كلمة تتحوّل إلى الأخضر (صحيح) أو الأحمر (خطأ) مع شرحٍ مبسّط للخطأ.
+
+### ✨ المزايا
+
+- **جميع السور الـ114**، مرتّبة حسب **أرقام صفحات المصحف** (مثل «صفحة ١ · آية ١–٧»).
+- **تصحيح مباشر** للتلاوة (أخضر = صحيح، أحمر = خطأ) مع بيان الحرف أو الحركة أو
+  طول المدّ محلّ الخطأ.
+- **تحديد الكلمات** — انقر أو اسحب لاختيار كلمة أو عدّة كلمات أو مقطع **يمتدّ عبر
+  عدّة آيات**، ثم استمع إليه أو اختبر نطقك عليه.
+- **نمطان للاستماع:** تجويد (تلاوة الحصري بالترتيل) أو قراءة عادية (كلمة‑بكلمة بنطق واضح).
+- **لوحة الأخطاء** مع إحصاء مستمر وتفاصيل صوتية لكل كلمة.
+- **حجم خط قابل للتعديل**، خط عربي أصيل، وواجهة ثنائية اللغة.
+- **يعمل دون إنترنت** بعد التهيئة، ويمكن **مشاركته على شبكة المنزل** ليعمل الميكروفون
+  على بقية الأجهزة.
+
+### 🧩 المتطلّبات والتشغيل
+
+1. أنشئ بيئة **Python 3.11** وثبّت الحزم: `pip install -r requirements.txt`
+   (سيُنزّل المحرّك نموذجه من الإنترنت عند أول تشغيل).
+2. **الصوت كلمة‑بكلمة** مُضمَّن في المستودع داخل `reference_audio/mujawwad/`
+   (صوت التجويد للحصري يُنزَّل تلقائيًا).
+3. للتشغيل على جهازك: `python run.py`
+4. للمشاركة على شبكة المنزل مع عمل الميكروفون: نفّذ `set HTTPS=1` ثم `python run.py`،
+   أو انقر نقرًا مزدوجًا على **`share.bat`**، وافتح على بقية الأجهزة العنوان المطبوع
+   مثل `https://192.168.x.x:7070` (اقبل تحذير الشهادة مرّة واحدة).
+
+### 🙏 شكر وتراخيص
+
+- نموذج النطق `quran-muaalem` ([arXiv:2509.00094](https://arxiv.org/abs/2509.00094)).
+- نصّ ومعالجة صوتيات القرآن `quran-transcript`.
+- صوت كلمة‑بكلمة: «Quran Word‑By‑Word Audio Dataset» (رخصة Apache‑2.0).
+- صوت التجويد: تلاوة الحصري عبر خدمة **QUL / Tarteel**.
+- الخط: *Amiri Quran*، واختياريًا *خط مجمع الملك فهد (حفص)*.
+
+> **يُرجى استخدام التطبيق باحترامٍ** لقدسية القرآن الكريم، والتحقّق من تلاوتك مع
+> **مُعلّمٍ مُتقن** — فالتصحيح الآليّ عونٌ لا بديل.
+
+</div>
+
+---
+---
+
+## 🇬🇧 In English
+
 An offline‑friendly web app that helps you **recite the Qur’an and get instant,
 phoneme‑level feedback** on your pronunciation and tajwīd — powered by the
 [`quran-muaalem`](https://arxiv.org/abs/2509.00094) model. Read from an
@@ -10,19 +72,7 @@ red with a plain‑language explanation of the mistake.
 > Runs locally on your PC, and can be shared with other devices on your home
 > Wi‑Fi from a single browser link.
 
-## 🎬 Demo · عرض توضيحي
-
-<!-- Replace the link below with your video. Easiest: edit this README on
-     github.com and DRAG-AND-DROP the mp4 here (auto-hosts + inline player, ≤10 MB).
-     Or commit it to docs/demo.mp4 and keep the raw URL line below. -->
-
-https://github.com/<YOUR-USERNAME>/al-muqri/raw/main/docs/demo.mp4
-
-*شاهد الفيديو أعلاه لكيفية استخدام التطبيق والتنقّل فيه.*
-
----
-
-## ✨ Features
+### ✨ Features
 
 - **All 114 surahs**, laid out by real **Mushaf page numbers** (e.g. `صفحة 1 · آية 1–7`).
 - **Live recitation** feedback (green = correct, red = mistake) with a clear
@@ -37,22 +87,17 @@ https://github.com/<YOUR-USERNAME>/al-muqri/raw/main/docs/demo.mp4
 - **Works offline** once set up (reference audio caches locally).
 - **Share on your home network** over HTTPS so the microphone works on other PCs.
 
----
-
-## 🧩 Requirements
+### 🧩 Requirements
 
 - **Python 3.11** (a conda environment is recommended).
 - Enough disk/RAM for the ML engine (**PyTorch**; the model downloads on first run).
 - A microphone.
 
-## 🚀 Installation
+### 🚀 Installation
 
 ```bash
-# 1. Create and activate an environment
 conda create -n quran_teacher python=3.11
 conda activate quran_teacher
-
-# 2. Install dependencies
 pip install -r requirements.txt
 ```
 
@@ -60,17 +105,12 @@ The pronunciation engine (`quran-muaalem`) pulls in PyTorch and downloads its
 model weights from Hugging Face **on first launch**, so the first run needs
 internet and may take a few minutes.
 
-### 🔊 Audio
-
-The **word‑by‑word recordings** used by *Normal Reading* mode are **included in
-this repository** under `reference_audio/mujawwad/` (~416 MB), so it works out
-of the box. They come from the Apache‑2.0
+**Audio:** the word‑by‑word recordings used by *Normal Reading* mode are
+**included** under `reference_audio/mujawwad/` (~416 MB), from the Apache‑2.0
 [Quran Word‑By‑Word Audio Dataset](https://huggingface.co/datasets/zaibihassan/Quranic-Word-By-Word-Audio-Data).
+The **Tajweed / Al‑Ḥuṣarī** audio is fetched and cached automatically at runtime.
 
-The **Tajweed / Al‑Ḥuṣarī** audio is fetched and cached automatically from the
-QUL API the first time you open a page — no manual step needed.
-
-## ▶️ Running
+### ▶️ Running
 
 **On your PC only:**
 ```bash
@@ -95,9 +135,7 @@ certificate — click **Advanced → Proceed**, then allow the microphone.
 
 **Ports:** UI `7070` · ML engine `8000` (internal, localhost only).
 
----
-
-## 🙏 Credits & Licenses
+### 🙏 Credits & Licenses
 
 This project stands on the work of others — huge thanks to them. Please
 respect each one's license:
@@ -112,7 +150,7 @@ respect each one's license:
   ([huggingface.co/datasets/zaibihassan/Quranic-Word-By-Word-Audio-Data](https://huggingface.co/datasets/zaibihassan/Quranic-Word-By-Word-Audio-Data)).
 - **Tajweed audio:** Al‑Ḥuṣarī recitation via the **QUL / Tarteel** API
   ([qul.tarteel.ai](https://qul.tarteel.ai)).
-- **Verse fonts:** *Amiri Quran* ([aliftype.com/amiri](https://github.com/aliftype/amiri));
+- **Verse fonts:** *Amiri Quran* ([github.com/aliftype/amiri](https://github.com/aliftype/amiri));
   optional *KFGQPC Uthmanic Script HAFS* (King Fahd Glorious Qur’an Printing Complex).
 - Built with **Flask**, **PyTorch**, **NumPy**, and **cryptography**.
 
@@ -123,53 +161,3 @@ purpose, at no cost. The third‑party assets above keep their own licenses.
 > **Please use this respectfully**, given the sanctity of the Qur’an, and
 > verify your recitation with a qualified teacher — the automated feedback is
 > an aid, not a substitute.
-
----
----
-
-<div dir="rtl">
-
-# 📖 المقرئ · Al‑Muqri’
-
-تطبيق ويب يعمل محليًا يساعدك على **تلاوة القرآن الكريم مع تصحيح فوري على مستوى
-الحروف والصوتيات** لنُطقك وتجويدك، بالاعتماد على نموذج
-[`quran-muaalem`](https://arxiv.org/abs/2509.00094). اقرأ من صفحة تشبه المصحف،
-اختر كلمة أو عدّة كلمات بالسحب (حتى عبر أكثر من آية)، استمع إلى التلاوة المرجعية،
-ثم اقرأ لترى كل كلمة تتحوّل إلى الأخضر (صحيح) أو الأحمر (خطأ) مع شرحٍ مبسّط للخطأ.
-
-## ✨ المزايا
-
-- **جميع السور الـ114**، مرتّبة حسب **أرقام صفحات المصحف** (مثل «صفحة ١ · آية ١–٧»).
-- **تصحيح مباشر** للتلاوة (أخضر = صحيح، أحمر = خطأ) مع بيان الحرف أو الحركة أو
-  طول المدّ محلّ الخطأ.
-- **تحديد الكلمات** — انقر أو اسحب لاختيار كلمة أو عدّة كلمات أو مقطع **يمتدّ عبر
-  عدّة آيات**، ثم استمع إليه أو اختبر نطقك عليه.
-- **نمطان للاستماع:** تجويد (تلاوة الحصري بالترتيل) أو قراءة عادية (كلمة‑بكلمة بنطق واضح).
-- **لوحة الأخطاء** مع إحصاء مستمر وتفاصيل صوتية لكل كلمة.
-- **حجم خط قابل للتعديل**، خط عربي أصيل، وواجهة ثنائية اللغة.
-- **يعمل دون إنترنت** بعد التهيئة، ويمكن **مشاركته على شبكة المنزل** ليعمل الميكروفون
-  على بقية الأجهزة.
-
-## 🧩 المتطلّبات والتشغيل
-
-1. أنشئ بيئة **Python 3.11** ثبّت الحزم: `pip install -r requirements.txt`
-   (سيُنزّل المحرّك نموذجه من الإنترنت عند أول تشغيل).
-2. **الصوت كلمة‑بكلمة**: انسخ مجلّد `mujawwad` من «Quran Word‑By‑Word Audio Dataset»
-   إلى `reference_audio/mujawwad/`. (صوت التجويد للحصري يُنزَّل تلقائيًا.)
-3. للتشغيل على جهازك: `python run.py`
-4. للمشاركة على شبكة المنزل مع عمل الميكروفون: نفّذ `set HTTPS=1` ثم `python run.py`،
-   أو انقر نقرًا مزدوجًا على **`share.bat`**، وافتح على بقية الأجهزة العنوان المطبوع
-   مثل `https://192.168.x.x:7070` (اقبل تحذير الشهادة مرّة واحدة).
-
-## 🙏 شكر وتراخيص
-
-- نموذج النطق `quran-muaalem` ([arXiv:2509.00094](https://arxiv.org/abs/2509.00094)).
-- نصّ ومعالجة صوتيات القرآن `quran-transcript`.
-- صوت كلمة‑بكلمة: «Quran Word‑By‑Word Audio Dataset» (رخصة Apache‑2.0).
-- صوت التجويد: تلاوة الحصري عبر خدمة **QUL / Tarteel**.
-- الخط: *Amiri Quran*، واختياريًا *خط مجمع الملك فهد (حفص)*.
-
-> **يُرجى استخدام التطبيق باحترامٍ** لقدسية القرآن الكريم، والتحقّق من تلاوتك مع
-> **مُعلّمٍ مُتقن** — فالتصحيح الآليّ عونٌ لا بديل.
-
-</div>
