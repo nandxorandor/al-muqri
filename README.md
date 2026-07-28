@@ -5,6 +5,8 @@
 
 ## ⬇️ Download — Ready‑to‑run Windows app · تطبيق ويندوز جاهز
 
+[![Download Al-Muqri for Windows](docs/download-banner.png)](https://github.com/nandxorandor/al-muqri/releases)
+
 **No Python, no setup.** Grab the portable Windows build from the
 **[Releases page](https://github.com/nandxorandor/al-muqri/releases)**, unzip it,
 and double‑click **`al-muqri.exe`**.
