@@ -2,11 +2,23 @@
 
 ## 🎬 Demo · عرض توضيحي
 
-<!-- Replace the link below with your video. Easiest: edit this README on
-     github.com and DRAG-AND-DROP the mp4 here (auto-hosts + inline player, ≤10 MB).
-     Or commit it to docs/demo.mp4 and keep the raw URL line below. -->
+▶️ **Watch the demo:** https://www.youtube.com/watch?v=qnHhzcH6kX8
 
-https://github.com/nandxorandor/al-muqri/raw/main/docs/demo.mp4
+## ⬇️ Download — Ready‑to‑run Windows app · تطبيق ويندوز جاهز
+
+**No Python, no setup.** Grab the portable Windows build from the
+**[Releases page](https://github.com/nandxorandor/al-muqri/releases)**, unzip it,
+and double‑click **`al-muqri.exe`**.
+
+- First launch downloads the AI model once (needs internet), then works offline.
+- If Windows shows *"protected your PC"* → **More info → Run anyway** (the app is
+  unsigned, which is normal).
+
+> **بالعربية:** لا حاجة لتثبيت بايثون. نزّل النسخة الجاهزة من صفحة
+> **[Releases](https://github.com/nandxorandor/al-muqri/releases)**، فُكّ الضغط،
+> ثم شغّل **`al-muqri.exe`**. (أول تشغيل يُنزّل النموذج مرة واحدة عبر الإنترنت.)
+
+*Developers who want to run from source can follow the setup below.*
 
 ---
 
