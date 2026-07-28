@@ -22,6 +22,7 @@ words when the error lands on a shared boundary).
 
 import io
 import os
+import sys
 import json
 import wave
 import threading
@@ -44,7 +45,12 @@ VERBOSE = os.getenv('VERBOSE', '1') != '0'
 QUL_API = os.getenv('QUL_API', 'https://qul.tarteel.ai/api/v1').rstrip('/')
 QUL_HUSARY_RECITATION = int(os.getenv('QUL_HUSARY_RECITATION', '20'))
 QUL_AUDIO_HOST = 'audio-cdn.tarteel.ai'
-APP_DIR = os.path.dirname(os.path.abspath(__file__))
+# When packaged with PyInstaller, data files (index.html, reference_audio, the
+# layout JSON, fonts) sit NEXT TO the .exe — not inside the frozen bundle.
+if getattr(sys, 'frozen', False):
+    APP_DIR = os.path.dirname(sys.executable)
+else:
+    APP_DIR = os.path.dirname(os.path.abspath(__file__))
 REFERENCE_AUDIO_DIR = os.getenv(
     'REFERENCE_AUDIO_DIR', os.path.join(APP_DIR, 'reference_audio', 'husary'))
 
@@ -952,8 +958,7 @@ def predict(raw):
 
 @app.route('/')
 def index():
-    here = os.path.dirname(os.path.abspath(__file__))
-    with open(os.path.join(here, 'index.html'), encoding='utf-8') as f:
+    with open(os.path.join(APP_DIR, 'index.html'), encoding='utf-8') as f:
         return Response(f.read(), mimetype='text/html')
 
 
