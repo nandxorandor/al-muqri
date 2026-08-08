@@ -69,3 +69,6 @@ mobile/android/app/src/main/assets/public/
 
 # Stale handoff bundle
 al-muqri-mobile-handoff.zip
+
+# Editor backups
+*.bak
