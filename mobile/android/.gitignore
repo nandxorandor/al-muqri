@@ -1,0 +1,4 @@
+# signing secrets - NEVER commit
+key.properties
+*.jks
+*.keystore

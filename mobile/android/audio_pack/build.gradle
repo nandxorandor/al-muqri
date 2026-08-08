@@ -1,0 +1,10 @@
+apply plugin: 'com.android.asset-pack'
+
+// ~420MB of recitation audio (Husary + word-by-word mujawwad). on-demand =>
+// downloaded the first time the user plays audio, then cached offline.
+assetPack {
+    packName = "audio_pack"
+    dynamicDelivery {
+        deliveryType = "on-demand"
+    }
+}

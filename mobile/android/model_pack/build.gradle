@@ -1,0 +1,10 @@
+apply plugin: 'com.android.asset-pack'
+
+// The 838MB recitation model. install-time => delivered with the app install,
+// so on-device AI works offline from first launch. Read via AssetManager.
+assetPack {
+    packName = "model_pack"
+    dynamicDelivery {
+        deliveryType = "install-time"
+    }
+}
